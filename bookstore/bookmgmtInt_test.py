@@ -37,6 +37,7 @@ async def test_login_and_access_books_apis(test_app):
         assert response.status_code == 200
         token_response = response.json()
         access_token = token_response.get('access_token')
+        print("access_token",access_token)
         assert access_token is not None
 
         # Step 2: Use the obtained access token to access book-related APIs
