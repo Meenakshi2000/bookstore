@@ -1,57 +1,92 @@
-from typing import List
+import unittest
+from fastapi.testclient import TestClient
+from main import app
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+class TestBookManagementAPI(unittest.TestCase):
+    def setUp(self):
+        self.client = TestClient(app)
+        self.book_data = {
+            "name": "Your Book Name",
+            "author": "John Doe",
+            "published_year": 2023,
+            "book_summary": "Your book summary"
+        }
 
-from database import Book  # Assuming this is defined in your models.py
-from database import get_db
-from middleware import JWTBearer
+        # Bearer token for authentication
+        self.token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtZWVuYWtzaGkuZGFpc3lAZ21haWwuY29tIiwiZXhwIjoxNzIwMjkyNzQxfQ.RReI4TAZ_IKWX_-EMnJIQqZS31Imz0oEVAE-dKTiCE8"
 
-router = APIRouter()
+    def get_headers(self):
+        return {"Authorization": f"Bearer {self.token}"}
+
+    def test_create_book(self):
+        headers = self.get_headers()
+        response = self.client.post("/books/", json=self.book_data, headers=headers)
+        self.assertEqual(response.status_code, 200)
+        created_book = response.json()
+        self.assertEqual(created_book["name"], self.book_data["name"])
+        self.assertEqual(created_book["author"], self.book_data["author"])
+        self.assertEqual(created_book["published_year"], self.book_data["published_year"])
+        self.assertEqual(created_book["book_summary"], self.book_data["book_summary"])
+
+    def test_update_book(self):
+        headers = self.get_headers()
+        response = self.client.post("/books/", json=self.book_data, headers=headers)
+        self.assertEqual(response.status_code, 200)
+        created_book = response.json()
+
+        updated_data = {
+            "name": "Updated Book Name",
+            "author": "Jane Doe",
+            "published_year": 2024,
+            "book_summary": "Updated book summary"
+        }
+        response = self.client.put(f"/books/{created_book['id']}", json=updated_data, headers=headers)
+        self.assertEqual(response.status_code, 200)
+        updated_book = response.json()
+        self.assertEqual(updated_book["name"], updated_data["name"])
+        self.assertEqual(updated_book["author"], updated_data["author"])
+        self.assertEqual(updated_book["published_year"], updated_data["published_year"])
+        self.assertEqual(updated_book["book_summary"], updated_data["book_summary"])
+
+    def test_delete_book(self):
+        headers = self.get_headers()
+        response = self.client.post("/books/", json=self.book_data, headers=headers)
+        self.assertEqual(response.status_code, 200)
+        created_book = response.json()
+
+        response = self.client.delete(f"/books/{created_book['id']}", headers=headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"message": "Book deleted successfully"})
+
+    def test_get_book_by_id(self):
+        headers = self.get_headers()
+        response = self.client.post("/books/", json=self.book_data, headers=headers)
+        self.assertEqual(response.status_code, 200)
+        created_book = response.json()
+
+        response = self.client.get(f"/books/{created_book['id']}", headers=headers)
+        self.assertEqual(response.status_code, 200)
+        retrieved_book = response.json()
+        self.assertEqual(retrieved_book["name"], self.book_data["name"])
+        self.assertEqual(retrieved_book["author"], self.book_data["author"])
+        self.assertEqual(retrieved_book["published_year"], self.book_data["published_year"])
+        self.assertEqual(retrieved_book["book_summary"], self.book_data["book_summary"])
+
+    def test_get_all_books(self):
+        headers = self.get_headers()
+        response = self.client.get("/books/", headers=headers)
+        self.assertEqual(response.status_code, 200)
+        books_list = response.json()
+        self.assertIsInstance(books_list, list)
+        if books_list:
+            first_book = books_list[0]
+            self.assertEqual(first_book["name"], self.book_data["name"])
+            self.assertEqual(first_book["author"], self.book_data["author"])
+            self.assertEqual(first_book["published_year"], self.book_data["published_year"])
+            self.assertEqual(first_book["book_summary"], self.book_data["book_summary"])
 
 
-@router.post("/books/", response_model=Book, dependencies=[Depends(JWTBearer())])
-async def create_book(book: Book, db: Session = Depends(get_db)):
-    db.add(book)
-    db.commit()
-    db.refresh(book)
-    return book
 
+if __name__ == "__main__":
+    unittest.main()
 
-@router.put("/books/{book_id}", response_model=Book, dependencies=[Depends(JWTBearer())])
-async def update_book(book_id: int, update_data: Book, db: Session = Depends(get_db)):
-    db_book = db.query(Book).filter(Book.id == book_id).first()
-    if db_book is None:
-        raise HTTPException(status_code=404, detail="Book not found")
-
-    update_data_dict = update_data.dict(exclude_unset=True)
-    for key, value in update_data_dict.items():
-        setattr(db_book, key, value)
-
-    db.commit()
-    db.refresh(db_book)
-    return db_book
-
-
-@router.delete("/books/{book_id}", dependencies=[Depends(JWTBearer())])
-async def delete_book(book_id: int, db: Session = Depends(get_db)):
-    db_book = db.query(Book).filter(Book.id == book_id).first()
-    if db_book is None:
-        raise HTTPException(status_code=404, detail="Book not found")
-    db.delete(db_book)
-    db.commit()
-    return {"message": "Book deleted successfully"}
-
-
-@router.get("/books/{book_id}", response_model=Book, dependencies=[Depends(JWTBearer())])
-async def get_book_by_id(book_id: int, db: Session = Depends(get_db)):
-    db_book = db.query(Book).filter(Book.id == book_id).first()
-    if db_book is None:
-        raise HTTPException(status_code=404, detail="Book not found")
-    return db_book
-
-
-@router.get("/books/", response_model=List[Book], dependencies=[Depends(JWTBearer())])
-async def get_all_books(db: Session = Depends(get_db)):
-    books = db.query(Book).all()
-    return books
