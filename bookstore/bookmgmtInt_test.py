@@ -7,12 +7,26 @@ from database import DATABASE_URL
 
 @pytest.fixture(scope="module")
 def test_app():
+
     yield app
 
 @pytest.mark.asyncio
 async def test_login_and_access_books_apis(test_app):
     async with httpx.AsyncClient(app=test_app, base_url="http://testserver") as client:
         # Step 1: Simulate login to obtain access token
+                # Step 1: Simulate login to obtain access token
+        signup_url = "/signup"
+        signup_data = {
+            "name": "Meenakshi Kumar",
+            "email": "meenakshi.daisy@gmail.com",
+            "password": "password123",
+            "passwordConfirm": "password123",
+            "photo": "default.png"
+
+        }
+
+        response = await client.post(signup_url, json=signup_data)
+        assert response.status_code == 200
         login_url = "/login"
         login_data = {
             "email": "meenakshi.daisy@gmail.com",
