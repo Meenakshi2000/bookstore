@@ -20,7 +20,7 @@ jobs:
           docker-compose up -d
       - name: Wait for the service to be ready
         run: | # Add wait strategy here, e.g., wait-for-it.sh or a custom script
-         ./wait-for-it.sh service-name:port --timeout=60 --strict -- echo "Service is up"
+          wait-for-it.sh service-name:port --timeout=60 --strict -- echo "Service is up"
       - name: Install dependencies  
         run: |  
           python -m pip install --upgrade pip
