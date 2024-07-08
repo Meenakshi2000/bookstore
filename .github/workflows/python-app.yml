@@ -31,7 +31,7 @@ jobs:
         continue-on-error: true  
       - name: Test with pytest  
         run: |  
-          coverage run -m pytest  -v -s  
+          pytest 
       - name: Generate Coverage Report  
         run: |  
           coverage report -m
