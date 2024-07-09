@@ -38,9 +38,9 @@ def mock_db_session():
 # Test create_book endpoint
 @pytest.mark.asyncio
 async def test_create_book(mock_jwt_bearer, mock_db_session):
-    response = client.post("/books/", json=mock_book.dict())
+    response = client.post("/books/", json=mock_book.model_dump())
     assert response.status_code == 200
-    assert response.json() == mock_book.dict()
+    assert response.json() == mock_book.model_dump()
 
 
 # Test update_book endpoint
@@ -49,7 +49,7 @@ async def test_update_book(mock_jwt_bearer, mock_db_session):
     update_data = {"name": "Updated Book"}
     response = client.put("/books/1", json=update_data)
     assert response.status_code == 200
-    updated_book = mock_book.dict()
+    updated_book = mock_book.model_dump()
     updated_book.update(update_data)
     assert response.json() == updated_book
 
@@ -67,7 +67,7 @@ async def test_delete_book(mock_jwt_bearer, mock_db_session):
 async def test_get_book_by_id(mock_jwt_bearer, mock_db_session):
     response = client.get("/books/1")
     assert response.status_code == 200
-    assert response.json() == mock_book.dict()
+    assert response.json() == mock_book.model_dump()
 
 
 # Test get_all_books endpoint
@@ -75,4 +75,4 @@ async def test_get_book_by_id(mock_jwt_bearer, mock_db_session):
 async def test_get_all_books(mock_jwt_bearer, mock_db_session):
     response = client.get("/books/")
     assert response.status_code == 200
-    assert response.json() == [book.dict() for book in mock_books]
+    assert response.json() == [book.model_dump() for book in mock_books]
