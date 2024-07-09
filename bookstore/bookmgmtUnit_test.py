@@ -1,80 +1,92 @@
 import unittest
-from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
-from main import app, create_book, update_book, delete_book, get_book_by_id, get_all_books
-from database import Book
+from main import app
 
-class TestBookAPI(unittest.TestCase):
+class TestBookManagementAPI(unittest.TestCase):
     def setUp(self):
         self.client = TestClient(app)
         self.book_data = {
-            "title": "Test Book",
-            "author": "Test Author",
-            "description": "Test Description",
-            "price": 9.99
+            "name": "Your Book Name",
+            "author": "John Doe",
+            "published_year": 2023,
+            "book_summary": "Your book summary"
         }
 
-    @patch('main.JWTBearer')
-    @patch('main.get_db')
-    def test_create_book(self, mock_get_db, mock_jwt_bearer):
-        mock_session = MagicMock()
-        mock_get_db.return_value = mock_session
+        # Bearer token for authentication
+        self.token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtZWVuYWtzaGkuZGFpc3lAZ21haWwuY29tIiwiZXhwIjoxNzIwMjkyNzQxfQ.RReI4TAZ_IKWX_-EMnJIQqZS31Imz0oEVAE-dKTiCE8"
 
-        response = self.client.post("/books/", json=self.book_data)
+    def get_headers(self):
+        return {"Authorization": f"Bearer {self.token}"}
+
+    def test_create_book(self):
+        headers = self.get_headers()
+        response = self.client.post("/books/", json=self.book_data, headers=headers)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), self.book_data)
+        created_book = response.json()
+        self.assertEqual(created_book["name"], self.book_data["name"])
+        self.assertEqual(created_book["author"], self.book_data["author"])
+        self.assertEqual(created_book["published_year"], self.book_data["published_year"])
+        self.assertEqual(created_book["book_summary"], self.book_data["book_summary"])
 
-    @patch('main.JWTBearer')
-    @patch('main.get_db')
-    def test_update_book(self, mock_get_db, mock_jwt_bearer):
-        mock_session = MagicMock()
-        mock_book = Book(**self.book_data)
-        mock_book.id = 1
-        mock_session.query().filter().first.return_value = mock_book
-        mock_get_db.return_value = mock_session
-
-        update_data = {"title": "Updated Book"}
-        response = self.client.put("/books/1", json=update_data)
+    def test_update_book(self):
+        headers = self.get_headers()
+        response = self.client.post("/books/", json=self.book_data, headers=headers)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["title"], "Updated Book")
+        created_book = response.json()
 
-    @patch('main.JWTBearer')
-    @patch('main.get_db')
-    def test_delete_book(self, mock_get_db, mock_jwt_bearer):
-        mock_session = MagicMock()
-        mock_book = Book(**self.book_data)
-        mock_book.id = 1
-        mock_session.query().filter().first.return_value = mock_book
-        mock_get_db.return_value = mock_session
+        updated_data = {
+            "name": "Updated Book Name",
+            "author": "Jane Doe",
+            "published_year": 2024,
+            "book_summary": "Updated book summary"
+        }
+        response = self.client.put(f"/books/{created_book['id']}", json=updated_data, headers=headers)
+        self.assertEqual(response.status_code, 200)
+        updated_book = response.json()
+        self.assertEqual(updated_book["name"], updated_data["name"])
+        self.assertEqual(updated_book["author"], updated_data["author"])
+        self.assertEqual(updated_book["published_year"], updated_data["published_year"])
+        self.assertEqual(updated_book["book_summary"], updated_data["book_summary"])
 
-        response = self.client.delete("/books/1")
+    def test_delete_book(self):
+        headers = self.get_headers()
+        response = self.client.post("/books/", json=self.book_data, headers=headers)
+        self.assertEqual(response.status_code, 200)
+        created_book = response.json()
+
+        response = self.client.delete(f"/books/{created_book['id']}", headers=headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"message": "Book deleted successfully"})
 
-    @patch('main.JWTBearer')
-    @patch('main.get_db')
-    def test_get_book_by_id(self, mock_get_db, mock_jwt_bearer):
-        mock_session = MagicMock()
-        mock_book = Book(**self.book_data)
-        mock_book.id = 1
-        mock_session.query().filter().first.return_value = mock_book
-        mock_get_db.return_value = mock_session
-
-        response = self.client.get("/books/1")
+    def test_get_book_by_id(self):
+        headers = self.get_headers()
+        response = self.client.post("/books/", json=self.book_data, headers=headers)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), self.book_data)
+        created_book = response.json()
 
-    @patch('main.JWTBearer')
-    @patch('main.get_db')
-    def test_get_all_books(self, mock_get_db, mock_jwt_bearer):
-        mock_session = MagicMock()
-        mock_books = [Book(**self.book_data), Book(**self.book_data)]
-        mock_session.query().all.return_value = mock_books
-        mock_get_db.return_value = mock_session
-
-        response = self.client.get("/books/")
+        response = self.client.get(f"/books/{created_book['id']}", headers=headers)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json()), 2)
+        retrieved_book = response.json()
+        self.assertEqual(retrieved_book["name"], self.book_data["name"])
+        self.assertEqual(retrieved_book["author"], self.book_data["author"])
+        self.assertEqual(retrieved_book["published_year"], self.book_data["published_year"])
+        self.assertEqual(retrieved_book["book_summary"], self.book_data["book_summary"])
 
-if __name__ == '__main__':
+    def test_get_all_books(self):
+        headers = self.get_headers()
+        response = self.client.get("/books/", headers=headers)
+        self.assertEqual(response.status_code, 200)
+        books_list = response.json()
+        self.assertIsInstance(books_list, list)
+        if books_list:
+            first_book = books_list[0]
+            self.assertEqual(first_book["name"], self.book_data["name"])
+            self.assertEqual(first_book["author"], self.book_data["author"])
+            self.assertEqual(first_book["published_year"], self.book_data["published_year"])
+            self.assertEqual(first_book["book_summary"], self.book_data["book_summary"])
+
+
+
+if __name__ == "__main__":
     unittest.main()
+
