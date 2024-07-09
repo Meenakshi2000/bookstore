@@ -27,8 +27,10 @@ def mock_db_session():
     mock_session.refresh.side_effect = lambda x: x  # Mock refresh to return the object itself
 
     # Set the expected return values for the database queries
-    mock_session.query().filter().first.return_value = mock_book
-    mock_session.query().all.return_value = mock_books
+    mock_query = MagicMock()
+    mock_query.filter().first.return_value = mock_book
+    mock_query.all.return_value = mock_books
+    mock_session.query.return_value = mock_query
 
     with patch("database.get_db", return_value=mock_session):
         yield mock_session
