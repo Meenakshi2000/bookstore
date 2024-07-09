@@ -91,6 +91,8 @@ Install dependencies: Open your terminal and navigate to the directory containin
           pip install -U coverage
           pip install pytest
           pip install pytest-asyncio
+
+Note : Manually delete test.db(if exists) before running the testcases.
 Run tests: Execute the following command in your terminal:
 
 ### Integration Tests
