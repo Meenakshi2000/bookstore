@@ -1,78 +1,84 @@
-import pytest
-from unittest.mock import MagicMock, patch
+import unittest
+from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
-from main import app  # Import FastAPI app from the main module
-from database import get_db, Book  # Import your Book model and get_db function
+from main import app
+from database import Book
 
-# Create a test client for FastAPI
-client = TestClient(app)
+class TestBookAPI(unittest.TestCase):
+    def setUp(self):
+        self.client = TestClient(app)
+        self.book_data = {
+            "name": "Test Book",
+            "author": "Test Author",
+            "book_summary": "Test Description",
+            "published_year": 2023
+        }
 
-# Mock data
-mock_book = Book(id=1, name="Test Book", author="Test Author", published_year=2023, book_summary="Test Summary")
-mock_books = [mock_book]
+    @patch('middleware.JWTBearer')
+    @patch('main.get_db')
+    def test_create_book(self, mock_get_db, mock_jwt_bearer):
+        mock_session = MagicMock()
+        mock_book = Book(**self.book_data)
+        mock_session.add.return_value = None
+        mock_session.commit.return_value = None
+        mock_session.refresh.return_value = mock_book
+        mock_get_db.return_value = mock_session
 
-# Mock JWTBearer dependency
-@pytest.fixture
-def mock_jwt_bearer():
-    with patch("middleware.JWTBearer.__call__", return_value=True):
-        yield
+        response = self.client.post("/books/", json=self.book_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), self.book_data)
 
-# Mock database session
-@pytest.fixture
-def mock_db_session():
-    mock_session = MagicMock(spec=Session)
-    mock_session.add.return_value = None
-    mock_session.commit.return_value = None
-    mock_session.refresh.side_effect = lambda x: x  # Mock refresh to return the object itself
+    @patch('middleware.JWTBearer')
+    @patch('main.get_db')
+    def test_update_book(self, mock_get_db, mock_jwt_bearer):
+        mock_session = MagicMock()
+        mock_book = Book(**self.book_data)
+        mock_book.id = 1
+        mock_session.query().filter().first.return_value = mock_book
+        mock_get_db.return_value = mock_session
 
-    # Set the expected return values for the database queries
-    mock_query = MagicMock()
-    mock_query.filter().first.return_value = mock_book
-    mock_query.all.return_value = mock_books
-    mock_session.query.return_value = mock_query
+        update_data = {"name": "Updated Book"}
+        response = self.client.put("/books/1", json=update_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["name"], "Updated Book")
 
-    with patch("database.get_db", return_value=mock_session):
-        yield mock_session
+    @patch('middleware.JWTBearer')
+    @patch('main.get_db')
+    def test_delete_book(self, mock_get_db, mock_jwt_bearer):
+        mock_session = MagicMock()
+        mock_book = Book(**self.book_data)
+        mock_book.id = 1
+        mock_session.query().filter().first.return_value = mock_book
+        mock_get_db.return_value = mock_session
 
-# Test create_book endpoint
-@pytest.mark.asyncio
-async def test_create_book(mock_jwt_bearer, mock_db_session):
-    response = client.post("/books/", json=mock_book.model_dump())
-    assert response.status_code == 200
-    assert response.json() == mock_book.model_dump()
+        response = self.client.delete("/books/1")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"message": "Book deleted successfully"})
 
+    @patch('middleware.JWTBearer')
+    @patch('main.get_db')
+    def test_get_book_by_id(self, mock_get_db, mock_jwt_bearer):
+        mock_session = MagicMock()
+        mock_book = Book(**self.book_data)
+        mock_book.id = 1
+        mock_session.query().filter().first.return_value = mock_book
+        mock_get_db.return_value = mock_session
 
-# Test update_book endpoint
-@pytest.mark.asyncio
-async def test_update_book(mock_jwt_bearer, mock_db_session):
-    update_data = {"name": "Updated Book"}
-    response = client.put("/books/1", json=update_data)
-    assert response.status_code == 200
-    updated_book = mock_book.model_dump()
-    updated_book.update(update_data)
-    assert response.json() == updated_book
+        response = self.client.get("/books/1")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), self.book_data)
 
+    @patch('middleware.JWTBearer')
+    @patch('main.get_db')
+    def test_get_all_books(self, mock_get_db, mock_jwt_bearer):
+        mock_session = MagicMock()
+        mock_books = [Book(**self.book_data), Book(**self.book_data)]
+        mock_session.query().all.return_value = mock_books
+        mock_get_db.return_value = mock_session
 
-# Test delete_book endpoint
-@pytest.mark.asyncio
-async def test_delete_book(mock_jwt_bearer, mock_db_session):
-    response = client.delete("/books/1")
-    assert response.status_code == 200
-    assert response.json() == {"message": "Book deleted successfully"}
+        response = self.client.get("/books/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 2)
 
-
-# Test get_book_by_id endpoint
-@pytest.mark.asyncio
-async def test_get_book_by_id(mock_jwt_bearer, mock_db_session):
-    response = client.get("/books/1")
-    assert response.status_code == 200
-    assert response.json() == mock_book.model_dump()
-
-
-# Test get_all_books endpoint
-@pytest.mark.asyncio
-async def test_get_all_books(mock_jwt_bearer, mock_db_session):
-    response = client.get("/books/")
-    assert response.status_code == 200
-    assert response.json() == [book.model_dump() for book in mock_books]
+if __name__ == '__main__':
+    unittest.main()
