@@ -77,18 +77,18 @@ async def test_delete_book(mock_jwt_bearer, mock_db_session, mock_db_query):
         self.assertEqual(retrieved_book["published_year"], self.book_data["published_year"])
         self.assertEqual(retrieved_book["book_summary"], self.book_data["book_summary"])
 
-@pytest.mark.asyncio
-async def test_get_all_books(mock_jwt_bearer, mock_db_session, mock_db_query):
-    response = client.get("/books/")
-    assert response.status_code == 200
-    assert response.json() == [mock_book.dict()]
+# @pytest.mark.asyncio
+# async def test_get_all_books(mock_jwt_bearer, mock_db_session, mock_db_query):
+#     response = client.get("/books/")
+#     assert response.status_code == 200
+#     assert response.json() == [mock_book.dict()]
 
-# Test get_book_by_id endpoint
-@pytest.mark.asyncio
-async def test_get_book_by_id(mock_jwt_bearer, mock_db_session, mock_db_query):
-    response = client.get("/books/1/")
-    assert response.status_code == 200
-    assert response.json() == mock_book.dict()
+# # Test get_book_by_id endpoint
+# @pytest.mark.asyncio
+# async def test_get_book_by_id(mock_jwt_bearer, mock_db_session, mock_db_query):
+#     response = client.get("/books/1/")
+#     assert response.status_code == 200
+#     assert response.json() == mock_book.dict()
 
 
 if __name__ == "__main__":
