@@ -25,8 +25,11 @@ def mock_db_session():
     mock_session.add.return_value = None
     mock_session.commit.return_value = None
     mock_session.refresh.side_effect = lambda x: x  # Mock refresh to return the object itself
+
+    # Set the expected return values for the database queries
     mock_session.query().filter().first.return_value = mock_book
     mock_session.query().all.return_value = mock_books
+
     with patch("database.get_db", return_value=mock_session):
         yield mock_session
 
@@ -70,4 +73,4 @@ async def test_get_book_by_id(mock_jwt_bearer, mock_db_session):
 async def test_get_all_books(mock_jwt_bearer, mock_db_session):
     response = client.get("/books/")
     assert response.status_code == 200
-    assert response.json() == [mock_book.dict()]
+    assert response.json() == [book.dict() for book in mock_books]
