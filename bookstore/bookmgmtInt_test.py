@@ -115,7 +115,6 @@ async def test_book_api_error_handling(test_app):
         }
 
 
-
         # Test retrieving a book that doesn't exist
         get_invalid_book_url = "/books/99999"  # Assuming this ID doesn't exist
         response = await client.get(get_invalid_book_url, headers=headers)
