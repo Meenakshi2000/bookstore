@@ -86,7 +86,7 @@ async def test_get_all_books(mock_jwt_bearer, mock_db_session, mock_db_query):
 # Test get_book_by_id endpoint
 @pytest.mark.asyncio
 async def test_get_book_by_id(mock_jwt_bearer, mock_db_session, mock_db_query):
-    response = client.get("/books/1")
+    response = client.get("/books/1/")
     assert response.status_code == 200
     assert response.json() == mock_book.dict()
 
