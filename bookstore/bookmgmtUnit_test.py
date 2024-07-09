@@ -89,8 +89,8 @@ async def test_get_non_existent_book(mock_jwt_bearer, mock_db_session, mock_db_q
 async def test_list_books(mock_jwt_bearer, mock_db_session, mock_db_query):
     response = client.get("/books/")
     assert response.status_code == 200
-    print("see data1",response.json())
-    print("see data2",[book.dict() for book in mock_books])
+    # print("see data1",response.json())
+    # print("see data2",[book.dict() for book in mock_books])
     assert response.json() == [book.dict() for book in mock_books]
 
 # Test update_book endpoint with non-existent book
@@ -117,3 +117,4 @@ async def test_list_books_by_author(mock_jwt_bearer, mock_db_session, mock_db_qu
     response = client.get("/books/?author_id=1")
     assert response.status_code == 200
     assert response.json() == [book.dict() for book in mock_books]
+
