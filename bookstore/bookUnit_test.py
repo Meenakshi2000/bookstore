@@ -1,7 +1,7 @@
 import pytest
 import httpx
 
-# Replace with your actual FastAPI application and configuration
+
 from main import app
 from database import DATABASE_URL
 
@@ -13,8 +13,6 @@ def test_app():
 @pytest.mark.asyncio
 async def test_login_and_access_books_apis(test_app):
     async with httpx.AsyncClient(app=test_app, base_url="http://testserver") as client:
-        # Step 1: Simulate login to obtain access token
-                # Step 1: Simulate login to obtain access token
         signup_url = "/signup"
         signup_data = {
             "name": "Meenakshi Kumar",
@@ -40,7 +38,7 @@ async def test_login_and_access_books_apis(test_app):
         print("access_token",access_token)
         assert access_token is not None
 
-        # Step 2: Use the obtained access token to access book-related APIs
+
         headers = {
             "Authorization": f"Bearer {access_token}"
         }
@@ -90,13 +88,9 @@ async def test_login_and_access_books_apis(test_app):
         assert response.json() == {"message": "Book deleted successfully"}
 
 
-
-
-
 @pytest.mark.asyncio
 async def test_book_api_error_handling(test_app):
     async with httpx.AsyncClient(app=test_app, base_url="http://testserver") as client:
-        # Step 1: Simulate login to obtain access token
         login_url = "/login"
         login_data = {
             "email": "meenakshi.daisy@gmail.com",
@@ -109,7 +103,6 @@ async def test_book_api_error_handling(test_app):
         access_token = token_response.get('access_token')
         assert access_token is not None
 
-        # Step 2: Use the obtained access token to access book-related APIs
         headers = {
             "Authorization": f"Bearer {access_token}"
         }

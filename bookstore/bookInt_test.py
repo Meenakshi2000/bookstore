@@ -2,8 +2,8 @@ import pytest
 from unittest.mock import MagicMock, patch
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
-from main import app  # Import FastAPI app from the main module
-from database import get_db, Book  # Import your Book model and get_db function
+from main import app  
+from database import get_db, Book  
 
 # Create a test client for FastAPI
 client = TestClient(app)
@@ -89,8 +89,6 @@ async def test_get_non_existent_book(mock_jwt_bearer, mock_db_session, mock_db_q
 async def test_list_books(mock_jwt_bearer, mock_db_session, mock_db_query):
     response = client.get("/books/")
     assert response.status_code == 200
-    # print("see data1",response.json())
-    # print("see data2",[book.dict() for book in mock_books])
     assert response.json() == [book.dict() for book in mock_books]
 
 # Test update_book endpoint with non-existent book
